@@ -24,6 +24,8 @@ void rotation_cycle(const bitmap_image &image);
 
 bitmap_image histo(const bitmap_image &source, char channel);
 
+bitmap_image histo(std::vector<std::vector<int>> &source);
+
 void ycbcr_histos(const bitmap_image &y, const bitmap_image &cb, const bitmap_image &cr);
 
 double count_expected_value(const bitmap_image &source, char component);
@@ -35,6 +37,109 @@ double count_standard_deviation(const bitmap_image &source, char component);
 double enthropy(const bitmap_image &rgb, char channel);
 
 bitmap_image merge_ycbcr(const bitmap_image &y, const bitmap_image &cb, const bitmap_image &cr);
+
+std::vector<std::vector<std::vector<int>>> DPCM(const bitmap_image &source, char channel);
+
+std::vector<double> dpcm_enthropies(const std::vector<std::vector<std::vector<int>>> &data, const bitmap_image &source);
+
+std::vector<double> DPCM_driver(const bitmap_image &source, char channel);
+
+std::vector<double> DPCM_driver(const bitmap_image &source, char channel) {
+    std::vector<std::vector<std::vector<int>>> data = DPCM(source, channel);
+    std::vector<double> entropies = dpcm_enthropies(data, source);
+    return entropies;
+}
+
+void dpcm_histos(const bitmap_image &source, const bitmap_image &merged_ycbcr) {
+    std::vector<std::vector<std::vector<int>>> data1 = DPCM(source, 'r');
+    std::vector<std::vector<std::vector<int>>> data2 = DPCM(source, 'g');
+    std::vector<std::vector<std::vector<int>>> data3 = DPCM(source, 'b');
+    std::vector<std::vector<std::vector<int>>> data4 = DPCM(merged_ycbcr, 'r');
+    std::vector<std::vector<std::vector<int>>> data5 = DPCM(merged_ycbcr, 'g');
+    std::vector<std::vector<std::vector<int>>> data6 = DPCM(merged_ycbcr, 'b');
+
+    histo(data1[0]).save_image("images/15. R1.bmp");
+    histo(data1[1]).save_image("images/15. R2.bmp");
+    histo(data1[2]).save_image("images/15. R3.bmp");
+    histo(data1[3]).save_image("images/15. R4.bmp");
+
+    histo(data2[0]).save_image("images/15. G1.bmp");
+    histo(data2[1]).save_image("images/15. G2.bmp");
+    histo(data2[2]).save_image("images/15. G3.bmp");
+    histo(data2[3]).save_image("images/15. G4.bmp");
+
+    histo(data3[0]).save_image("images/15. B1.bmp");
+    histo(data3[1]).save_image("images/15. B2.bmp");
+    histo(data3[2]).save_image("images/15. B3.bmp");
+    histo(data3[3]).save_image("images/15. B4.bmp");
+
+    histo(data4[0]).save_image("images/15. Y1.bmp");
+    histo(data4[1]).save_image("images/15. Y2.bmp");
+    histo(data4[2]).save_image("images/15. Y3.bmp");
+    histo(data4[3]).save_image("images/15. Y4.bmp");
+
+    histo(data5[0]).save_image("images/15. Cb1.bmp");
+    histo(data5[1]).save_image("images/15. Cb2.bmp");
+    histo(data5[2]).save_image("images/15. Cb3.bmp");
+    histo(data5[3]).save_image("images/15. Cb4.bmp");
+
+    histo(data6[0]).save_image("images/15. Cr1.bmp");
+    histo(data6[1]).save_image("images/15. Cr2.bmp");
+    histo(data6[2]).save_image("images/15. Cr3.bmp");
+    histo(data6[3]).save_image("images/15. Cr4.bmp");
+}
+
+void DPCM_cycle(const bitmap_image &source, const bitmap_image &merged_ycbcr) {
+    std::future<std::vector<double>> i1 = std::async(&DPCM_driver, std::ref(source), 'r');
+    std::future<std::vector<double>> i2 = std::async(&DPCM_driver, std::ref(source), 'g');
+    std::future<std::vector<double>> i3 = std::async(&DPCM_driver, std::ref(source), 'b');
+    std::future<std::vector<double>> i4 = std::async(&DPCM_driver, std::ref(merged_ycbcr), 'r');
+    std::future<std::vector<double>> i5 = std::async(&DPCM_driver, std::ref(merged_ycbcr), 'g');
+    std::future<std::vector<double>> i6 = std::async(&DPCM_driver, std::ref(merged_ycbcr), 'b');
+
+    std::vector<double> result1 = i1.get();
+    std::vector<double> result2 = i2.get();
+    std::vector<double> result3 = i3.get();
+    std::vector<double> result4 = i4.get();
+    std::vector<double> result5 = i5.get();
+    std::vector<double> result6 = i6.get();
+
+    std::cout << "\n16. Enthropy of DPCM array of R channel" << std::endl;
+    for (int i = 0; i < 4; ++i) {
+        std::cout << i + 1 << " way: ";
+        std::cout << "H(D) = " << result1[i] << std::endl;
+    }
+
+    std::cout << "Enthropy of DPCM array of G channel" << std::endl;
+    for (int i = 0; i < 4; ++i) {
+        std::cout << i + 1 << " way: ";
+        std::cout << "H(D) = " << result2[i] << std::endl;
+    }
+
+    std::cout << "Enthropy of DPCM array of B channel" << std::endl;
+    for (int i = 0; i < 4; ++i) {
+        std::cout << i + 1 << " way: ";
+        std::cout << "H(D) = " << result3[i] << std::endl;
+    }
+
+    std::cout << "Enthropy of DPCM array of Y channel" << std::endl;
+    for (int i = 0; i < 4; ++i) {
+        std::cout << i + 1 << " way: ";
+        std::cout << "H(D) = " << result4[i] << std::endl;
+    }
+
+    std::cout << "Enthropy of DPCM array of Cb channel" << std::endl;
+    for (int i = 0; i < 4; ++i) {
+        std::cout << i + 1 << " way: ";
+        std::cout << "H(D) = " << result5[i] << std::endl;
+    }
+
+    std::cout << "Enthropy of DPCM array of Cr channel" << std::endl;
+    for (int i = 0; i < 4; ++i) {
+        std::cout << i + 1 << " way: ";
+        std::cout << "H(D) = " << result6[i] << std::endl;
+    }
+}
 
 void call_from_thread(const bitmap_image &image, bitmap_image &result, char color, const std::string &path) {
     result = leave_single_color(image, color);
@@ -82,9 +187,16 @@ void enthropies(const bitmap_image &image, const bitmap_image &y, const bitmap_i
     std::cout << "Enthropy of Cr channel: " << i6.get() << std::endl;
 }
 
-int main() {
+int main(int argc, char **argv) {
 
-    bitmap_image image("images/a.bmp");
+    std::string path;
+    if (argc == 2) {
+        path = argv[1];
+    } else {
+        path = "images/a.bmp";
+    }
+
+    bitmap_image image(path);
     std::thread t8(histograms, std::ref(image));
 
     bitmap_image y, cb, cr;
@@ -95,6 +207,7 @@ int main() {
     t4.join();
     t5.join();
     t6.join();
+    dpcm_histos(image, merge_ycbcr(y, cb, cr)); //15
     std::thread t10(correlations, std::ref(image), std::ref(y), std::ref(cb), std::ref(cr));
 
     bitmap_image r, g, b;
@@ -178,11 +291,11 @@ int main() {
               << after_another_restoraion.channel_psnr(image, 'b') << std::endl;
     enthropies(image, y, cb, cr);
 
+    DPCM_cycle(image, merge_ycbcr(y, cb, cr)); //16
     return 0;
 }
 
 //TODO .4.2
-//TODO .14
 
 double enthropy(const bitmap_image &rgb, char channel) {
     std::vector<double> result(256);
@@ -362,9 +475,9 @@ double count_expected_value(const bitmap_image &source, char component) { //Ма
 }
 
 bitmap_image histo(const bitmap_image &source, char channel) {
-    bitmap_image res(255, 255);
+    bitmap_image res(256, 256);
     double max = 0;
-    uint32_t pixels[255];
+    uint32_t pixels[256];
 
     unsigned int current;
     for (uint32_t &pixel : pixels) {
@@ -400,11 +513,42 @@ bitmap_image histo(const bitmap_image &source, char channel) {
         }
     }
 
-    for (unsigned int i = 0; i < 255; ++i) {
-        for (unsigned int j = 0; j < ((pixels[i] / max) * 255.0); ++j) {
+    for (unsigned int i = 0; i < 256; ++i) {
+        for (unsigned int j = 0; j < ((pixels[i] / max) * 256.0); ++j) {
             res.set_pixel(i, j, 126, 232, 255);
         }
     }
+
+    return mirror(res, 'w');
+}
+
+bitmap_image histo(std::vector<std::vector<int>> &source) {
+    bitmap_image res(256, 256);
+    double max = 0;
+    uint32_t pixels[256];
+
+    unsigned int current;
+    for (uint32_t &pixel : pixels) {
+        pixel = 0;
+    }
+
+    for (unsigned int i = 0; i < source.size(); ++i) {
+        for (unsigned int j = 0; j < source[0].size(); ++j) {
+            current = source[i][j] % 255;
+            if (current > 256) break;
+            pixels[current]++;
+            if (pixels[current] > max) max = pixels[current];
+        }
+    }
+    //std::cout << "first cycle done" << std::endl;
+
+    for (unsigned int i = 0; i < 256; ++i) {
+        for (unsigned int j = 0; j < ((pixels[i] / max) * 255.0); ++j) {
+            res.set_pixel(i, j, 176, 184, 65);
+        }
+    }
+
+    //std::cout << "second cycle done" << std::endl;
 
     return mirror(res, 'w');
 }
@@ -609,133 +753,74 @@ bitmap_image generate_rgb_back(const bitmap_image &y, const bitmap_image &cb, co
     return res;
 }
 
-/*
-void DPCM_driver(const bitmap_image &source){
-    std::vector<std::vector<std::vector<std::vector<int>>>> diff;
-    diff = DPCM(i_h, img, img1);
-    count_diff_entropy(diff, i_h);
-    printf("\n");
-    get_diff_frequency(diff, i_h);
-}
+//14
+std::vector<std::vector<std::vector<int>>> DPCM(const bitmap_image &source, char channel) {
 
-int**** DPCM(BITMAPINFOHEADER* i_h, RGBGUADS** img, RGBGUADS** img1){
-    int**** D = (int****)malloc(6 * sizeof(int***));
-    for (int i = 0; i < 6; i++)
-    {
-        D[i] = (int***)malloc(4 * sizeof(int**));
-        for (int j = 0; j < 4; j++)
-        {
-            D[i][j] = (int**)malloc((i_h -> biHeight - 1) * sizeof(int*));
-            for (int k = 0; k < i_h -> biHeight - 1; k++)
-            {
-                D[i][j][k] = (int*)malloc((i_h -> biWidth - 1) * sizeof(int));
+    std::vector<std::vector<std::vector<int>>> res(4, std::vector<std::vector<int>>(source.width(),
+                                                                                    std::vector<int>(source.height())));
+    for (int k = 0; k < 4; ++k) {
+        res[k].reserve(source.width() * source.height());
+        for (int i = 1; i < source.width(); i++) {
+            res[k][i].reserve(source.height());
+        }
+    }
+    for (int i = 1; i < source.width(); i++) {
+        for (int j = 1; j < source.height(); j++) {
+            switch (channel) {
+                case 'r':
+                    res[0][i - 1][j - 1] = source.get_pixel(i, j).red - source.get_pixel(i, j - 1).red + 128;
+                    res[1][i - 1][j - 1] = source.get_pixel(i, j).red - source.get_pixel(i - 1, j).red + 128;
+                    res[2][i - 1][j - 1] = source.get_pixel(i, j).red - source.get_pixel(i - 1, j - 1).red + 128;
+                    res[3][i - 1][j - 1] = source.get_pixel(i, j).red -
+                                           (source.get_pixel(i - 1, j - 1).red + source.get_pixel(i, j - 1).red +
+                                            source.get_pixel(i - 1, j).red) / 3 + 128;
+                    break;
+                case 'g':
+                    res[0][i - 1][j - 1] = source.get_pixel(i, j).green - source.get_pixel(i, j - 1).green + 128;
+                    res[1][i - 1][j - 1] = source.get_pixel(i, j).green - source.get_pixel(i - 1, j).green + 128;
+                    res[2][i - 1][j - 1] = source.get_pixel(i, j).green - source.get_pixel(i - 1, j - 1).green + 128;
+                    res[3][i - 1][j - 1] = source.get_pixel(i, j).green -
+                                           (source.get_pixel(i - 1, j - 1).green + source.get_pixel(i, j - 1).green +
+                                            source.get_pixel(i - 1, j).green) / 3 + 128;
+                    break;
+                case 'b':
+                    res[0][i - 1][j - 1] = source.get_pixel(i, j).blue - source.get_pixel(i, j - 1).blue + 128;
+                    res[1][i - 1][j - 1] = source.get_pixel(i, j).blue - source.get_pixel(i - 1, j).blue + 128;
+                    res[2][i - 1][j - 1] = source.get_pixel(i, j).blue - source.get_pixel(i - 1, j - 1).blue + 128;
+                    res[3][i - 1][j - 1] = source.get_pixel(i, j).blue -
+                                           (source.get_pixel(i - 1, j - 1).blue + source.get_pixel(i, j - 1).blue +
+                                            source.get_pixel(i - 1, j).blue) / 3 + 128;
+                    break;
+                default:
+                    std::cout << "default case reached! Something went wrong..." << std::endl;
+                    break;
             }
         }
     }
-
-    for (int i = 1; i < i_h -> biHeight; i++)
-    {
-        for (int j = 1; j < i_h -> biWidth; j++)
-        {
-            D[0][0][i - 1][j - 1] = img[i][j].rgbRed - img[i][j - 1].rgbRed + 128;
-            D[1][0][i - 1][j - 1] = img[i][j].rgbGreen - img[i][j - 1].rgbGreen + 128;
-            D[2][0][i - 1][j - 1] = img[i][j].rgbBlue - img[i][j - 1].rgbBlue + 128;
-            D[3][0][i - 1][j - 1] = img1[i][j].rgbRed - img1[i][j - 1].rgbRed + 128;
-            D[4][0][i - 1][j - 1] = img1[i][j].rgbGreen - img1[i][j - 1].rgbGreen + 128;
-            D[5][0][i - 1][j - 1] = img1[i][j].rgbBlue - img1[i][j - 1].rgbBlue + 128;
-            D[0][1][i - 1][j - 1] = img[i][j].rgbRed - img[i - 1][j].rgbRed + 128;
-            D[1][1][i - 1][j - 1] = img[i][j].rgbGreen - img[i - 1][j].rgbGreen + 128;
-            D[2][1][i - 1][j - 1] = img[i][j].rgbBlue - img[i - 1][j].rgbBlue + 128;
-            D[3][1][i - 1][j - 1] = img1[i][j].rgbRed - img1[i - 1][j].rgbRed + 128;
-            D[4][1][i - 1][j - 1] = img1[i][j].rgbGreen - img1[i - 1][j].rgbGreen + 128;
-            D[5][1][i - 1][j - 1] = img1[i][j].rgbBlue - img1[i - 1][j].rgbBlue + 128;
-            D[0][2][i - 1][j - 1] = img[i][j].rgbRed - img[i - 1][j - 1].rgbRed + 128;
-            D[1][2][i - 1][j - 1] = img[i][j].rgbGreen - img[i - 1][j - 1].rgbGreen + 128;
-            D[2][2][i - 1][j - 1] = img[i][j].rgbBlue - img[i - 1][j - 1].rgbBlue + 128;
-            D[3][2][i - 1][j - 1] = img1[i][j].rgbRed - img1[i - 1][j - 1].rgbRed + 128;
-            D[4][2][i - 1][j - 1] = img1[i][j].rgbGreen - img1[i - 1][j - 1].rgbGreen + 128;
-            D[5][2][i - 1][j - 1] = img1[i][j].rgbBlue - img1[i - 1][j - 1].rgbBlue + 128;
-            D[0][3][i - 1][j - 1] = img[i][j].rgbRed - (img[i - 1][j - 1].rgbRed + img[i][j - 1].rgbRed + img[i - 1][j].rgbRed) / 3 + 128;
-            D[1][3][i - 1][j - 1] = img[i][j].rgbGreen - (img[i - 1][j - 1].rgbGreen + img[i][j - 1].rgbGreen + img[i - 1][j].rgbGreen) / 3 + 128;
-            D[2][3][i - 1][j - 1] = img[i][j].rgbBlue - (img[i - 1][j - 1].rgbBlue + img[i][j - 1].rgbBlue + img[i - 1][j].rgbBlue) / 3 + 128;
-            D[3][3][i - 1][j - 1] = img1[i][j].rgbRed - (img1[i - 1][j - 1].rgbRed + img1[i][j - 1].rgbRed + img1[i - 1][j].rgbRed) / 3 + 128;
-            D[4][3][i - 1][j - 1] = img1[i][j].rgbGreen - (img1[i - 1][j - 1].rgbGreen + img1[i][j - 1].rgbGreen + img1[i - 1][j].rgbGreen) / 3 + 128;
-            D[5][3][i - 1][j - 1] = img1[i][j].rgbBlue - (img1[i - 1][j - 1].rgbBlue + img1[i][j - 1].rgbBlue + img1[i - 1][j].rgbBlue) / 3 + 128;
-        }
-    }
-    return D;
+    return res;
 }
 
-void count_diff_entropy(int**** diff, BITMAPINFOHEADER* i_h) {
-    double* H;
-    double* freq;
-    for (int r = 0; r < 4; r++)
-    {
-        H = (double*)malloc(6* sizeof(double));
-
-        printf("Rule %d:\n", r + 1);
-        for (int i = 0; i < 6; i++)
-        {
-            freq = (double*)malloc(256* sizeof(double));
-            for (int j = 0; j < i_h -> biHeight - 1; j++)
-            {
-                for (int k = 0; k < i_h -> biWidth - 1; k++)
-                {
-                    freq[abs(diff[i][r][j][k]) % 256]++;
-                }
-            }
-            for (int j = 0; j < 256; j++)
-            {
-                freq[j] /= i_h -> biHeight * i_h -> biWidth;
-                if (freq[j] != 0)
-                {
-                    H[i] -= freq[j] * log2(freq[j]);
-                }
-                freq[j] = 0;
+//16
+std::vector<double>
+dpcm_enthropies(const std::vector<std::vector<std::vector<int>>> &data, const bitmap_image &source) {
+    std::vector<double> res(256);
+    std::vector<double> results(4);
+    for (int k = 0; k < 4; k++) {
+        double result = 0;
+        for (int i = 0; i < source.width() - 1; i++) {
+            for (int j = 0; j < source.height() - 1; j++) {
+                res[abs(data[k][i][j]) % 256]++;
             }
         }
 
-        printf("H(D[R]) = %f\n", H[0]);
-        printf("H(D[G]) = %f\n", H[1]);
-        printf("H(D[B]) = %f\n", H[2]);
-        printf("H(D[Y]) = %f\n", H[3]);
-        printf("H(D[Cb]) = %f\n", H[4]);
-        printf("H(D[Cr]) = %f\n", H[5]);
+        for (int j = 0; j < 256; j++) {
+            res[j] /= source.height() * source.width();
+            if (res[j] != 0) {
+                result -= res[j] * log2(res[j]);
+            }
+            res[j] = 0;
+        }
+        results[k] = result;
     }
-    free(H);
-    free(freq);
+    return results;
 }
-
-void get_diff_frequency(int****D, BITMAPINFOHEADER* i_h) {
-
-    for (int r = 0; r < 4; r++) {
-        int** freq = (int**)calloc(6, sizeof(int*));//calloc
-        for (int a = 0; a < 6; a++) {
-            freq[a] = (int*)calloc(256, sizeof(int));
-            for (int i = 0; i < i_h -> biHeight - 1; i++) {
-                for (int j = 0; j < i_h -> biWidth - 1; j++) {
-                    freq[a][abs(D[a][r][i][j]) % 256]++;
-                }
-            }
-
-        }
-        char name[4][256] = {{"diff_frequency1.txt"},
-                             {"diff_frequency2.txt"},
-                             {"diff_frequency3.txt"},
-                             {"diff_frequency4.txt"}};
-        FILE *f = fopen(name[r], "w");
-
-        for (int i = 0; i < 6; i++) {
-            for (int j = 0; j < 256; j++) {
-                fprintf(f, "%d", freq[i][j]);
-                fprintf(f, " ");
-            }
-            fprintf(f, "\n");
-        }
-        for (int i = 0; i < 6; i++)
-            free(freq[i]);
-        free(freq);
-        fclose(f);
-    }
-}
- */
